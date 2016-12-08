@@ -50,8 +50,8 @@ parser.add_argument("--comment",
 parser.add_argument("query", nargs = "*",
         help = "give explicit arXiv query(s)")
 
-parser.add_argument("-m", "--max-results", type = int, default = 8,
-        help = "maximal number of results to display (defaults to 8)")
+parser.add_argument("-m", "--max-results", type = int, default = 10,
+        help = "maximal number of results to display (defaults to 10)")
 
 parser.add_argument("--sort-by",
         choices = ['relevance', 'updated', 'submitted'],
@@ -136,17 +136,23 @@ else:
     index=0
     for entry in feed.entries:
         index+=1
-        print ''
-        print 'INDEX: ' + PURPLE + `index` + NORMAL
-        print '  arXiv-id: '+ GREEN +'%s' % entry.id.split('/abs/')[-1] + NORMAL + ',  Published: %s' % entry.published
-        print '  Title: ' + ORANGE + '%s' % entry.title +NORMAL
-        print '  Authors: ' + CYAN + '%s' % ', '.join(author.name for author in
-                entry.contributors) +NORMAL
-    
+        # Spacing
+        space=' '
+        if (index >= 10):
+            space=''
         print ''
 
+        print PURPLE + `index` + NORMAL + space + '- arXiv-id: '+ GREEN +'%s' % entry.id.split('/abs/')[-1] + NORMAL + ',  Published: %s' % entry.published
+        entry.title=entry.title.replace('\n','')
+        entry.title=entry.title.replace('  ',' ')
+        print '    Title: ' + ORANGE + '%s' % entry.title +NORMAL
+        print '    Authors: ' + CYAN + '%s' % ', '.join(author.name for author in
+                entry.contributors) +NORMAL
+    
+    print ''
+
     # Ask if download papers
-    downIndex=raw_input('Which papers would you like to download (ex: 1,3 or *) ?  ')
+    downIndex=raw_input('--- Which papers would you like to download (ex: 1,3 or *) ?  ')
     try:
         if (downIndex=='*'):
             # * means all entries
@@ -174,6 +180,9 @@ else:
                 file_name = file_name.replace('%a', authors)
                 published = entry.published.split('T')[0]
                 file_name = file_name.replace('%p', published)
+                # Remove line breaks and double spaces
+                file_name=file_name.replace('\n','')
+                file_name=file_name.replace('  ',' ')
                 print('  ' + GREEN + file_name + '.pdf' + NORMAL)
                 urllib.urlretrieve(link.href, file_name + '.pdf')
     
