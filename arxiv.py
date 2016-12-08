@@ -50,8 +50,8 @@ parser.add_argument("--comment",
 parser.add_argument("query", nargs = "*",
         help = "give explicit arXiv query(s)")
 
-parser.add_argument("-m", "--max-results", type = int, default = 10,
-        help = "maximal number of results to display (defaults to 10)")
+parser.add_argument("-m", "--max-results", type = int, default = 8,
+        help = "maximal number of results to display (defaults to 8)")
 
 parser.add_argument("--sort-by",
         choices = ['relevance', 'updated', 'submitted'],
@@ -120,70 +120,62 @@ print 'Searching the arXiv using the following query:'
 print '  ' + query
 print ''
 print ''
-print MAGENTA + '----- Results -----' + NORMAL
 
 response = urllib.urlopen(base_url + query).read()
 response = response.replace('author', 'contributor')
 
 feed = feedparser.parse(response)
 
-index=0
-for entry in feed.entries:
-    index+=1
-    print ''
-    print ''
-    print 'INDEX: ' + PURPLE + `index` + NORMAL
-    print '  arXiv-id: '+ GREEN +'%s' % entry.id.split('/abs/')[-1] + NORMAL
-    print '  Published: %s' % entry.published
-    print '  Title: ' + ORANGE + '%s' % entry.title +NORMAL
-    print '  Authors: ' + CYAN + '%s' % ', '.join(author.name for author in
-            entry.contributors) +NORMAL
+if (len(feed.entries)== 0):
+    # NO RESULTS
+    print MAGENTA + 'NO RESULTS !' + NORMAL
+else:
+    # RESULTS
+    print MAGENTA + '----- Results -----' + NORMAL
 
-    # if args.download:
-        # print ''
-        # print '  Downloading to:'
-        # for link in entry.links:
-            # if link.type == 'application/pdf':
-                # file_name = args.format
-                
-                # arxiv_id = link.href.split('/')[-1]
-                # file_name = file_name.replace('%i', arxiv_id)
-                # file_name = file_name.replace('%t', entry.title)
-                # authors = ', '.join(author.name for author in entry.contributors)
-                # file_name = file_name.replace('%a', authors)
-                # published = entry.published.split('T')[0]
-                # file_name = file_name.replace('%p', published)
+    index=0
+    for entry in feed.entries:
+        index+=1
+        print ''
+        print 'INDEX: ' + PURPLE + `index` + NORMAL
+        print '  arXiv-id: '+ GREEN +'%s' % entry.id.split('/abs/')[-1] + NORMAL + ',  Published: %s' % entry.published
+        print '  Title: ' + ORANGE + '%s' % entry.title +NORMAL
+        print '  Authors: ' + CYAN + '%s' % ', '.join(author.name for author in
+                entry.contributors) +NORMAL
+    
+        print ''
 
-                # print('    ' + file_name + '.pdf')
-                # urllib.urlretrieve(link.href, file_name + '.pdf')
+    # Ask if download papers
+    downIndex=raw_input('Which papers would you like to download (ex: 1,3 or *) ?  ')
+    try:
+        if (downIndex=='*'):
+            # * means all entries
+            downItems=range(len(feed.entries))
+        else:
+            downItems =[int(i)-1 for i in downIndex.split(',')]
+    except:
+        # Error: no download
+        print 'No download'
+        downItems=[]
 
-print ''
-downIndex=raw_input('Which papers would you like to download (ex: 1,3 or *) ?  ')
-try:
-    if (downIndex=='*'):
-        downItems=range(len(feed.entries))
-    else:
-        downItems =[int(i)-1 for i in downIndex.split(',')]
-except:
-    print 'No download'
-    downItems=[]
-for index in downItems:
-    entry=feed.entries[index]
-    print ''
-    print '  Downloading :'
-    for link in entry.links:
-        if link.type == 'application/pdf':
-            file_name = args.format
+    # Download selected items
+    for index in downItems:
+        entry=feed.entries[index]
+        print ''
+        print '  Downloading :'
+        for link in entry.links:
+            if link.type == 'application/pdf':
+                file_name = args.format
+    
+                arxiv_id = link.href.split('/')[-1]
+                file_name = file_name.replace('%i', arxiv_id)
+                file_name = file_name.replace('%t', entry.title)
+                authors = ', '.join(author.name for author in entry.contributors)
+                file_name = file_name.replace('%a', authors)
+                published = entry.published.split('T')[0]
+                file_name = file_name.replace('%p', published)
+                print('  ' + GREEN + file_name + '.pdf' + NORMAL)
+                urllib.urlretrieve(link.href, file_name + '.pdf')
+    
 
-            arxiv_id = link.href.split('/')[-1]
-            file_name = file_name.replace('%i', arxiv_id)
-            file_name = file_name.replace('%t', entry.title)
-            authors = ', '.join(author.name for author in entry.contributors)
-            file_name = file_name.replace('%a', authors)
-            published = entry.published.split('T')[0]
-            file_name = file_name.replace('%p', published)
-            print('  ' + GREEN + file_name + '.pdf' + NORMAL)
-            urllib.urlretrieve(link.href, file_name + '.pdf')
-
-print ''
 print 'Goodbye :)'
