@@ -1,5 +1,6 @@
+#!/usr/bin/python2
 # A cmd line tool for searching the arxiv and downloading documents from it
-# Copyright © 2015 Fabian Kirchner <kirchner@posteo.de>
+# Copyright 2015 Fabian Kirchner <kirchner@posteo.de>
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,7 +25,7 @@ parser = argparse.ArgumentParser(description = 'Search the arXiv')
 parser.add_argument('-d', '--download', action = 'store_true',
         help = "download papers")
 parser.add_argument('-f', '--format',
-        default = '%i',
+        default = '%a - %t',
         help = "how to format the files")
 
 parser.add_argument("-a", "--author", nargs = '+',
@@ -116,9 +117,12 @@ response = response.replace('author', 'contributor')
 
 feed = feedparser.parse(response)
 
+index=0
 for entry in feed.entries:
+    index+=1
     print ''
     print ''
+    print 'INDEX: ' + `index`
     print '  arXiv-id: %s' % entry.id.split('/abs/')[-1]
     print '  Published: %s' % entry.published
     print '  Title: %s' % entry.title
@@ -142,3 +146,31 @@ for entry in feed.entries:
 
                 print('    ' + file_name + '.pdf')
                 urllib.urlretrieve(link.href, file_name + '.pdf')
+
+print ''
+downIndex=raw_input('Which papers do you want to download (ex: 1,3) ?  ')
+try:
+    downItems =[int(i)-1 for i in downIndex.split(',')]
+except:
+    print 'No download'
+    downItems=[]
+for index in downItems:
+    entry=feed.entries[index]
+    print ''
+    print '  Downloading :'
+    for link in entry.links:
+        if link.type == 'application/pdf':
+            file_name = args.format
+
+            arxiv_id = link.href.split('/')[-1]
+            file_name = file_name.replace('%i', arxiv_id)
+            file_name = file_name.replace('%t', entry.title)
+            authors = ', '.join(author.name for author in entry.contributors)
+            file_name = file_name.replace('%a', authors)
+            published = entry.published.split('T')[0]
+            file_name = file_name.replace('%p', published)
+            print('    ' + file_name + '.pdf')
+            urllib.urlretrieve(link.href, file_name + '.pdf')
+
+print ''
+print 'Goodbye :)'
