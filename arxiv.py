@@ -20,6 +20,15 @@ import feedparser
 import urllib
 import os
 
+# Colors
+MAGENTA='\033[0;31m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+ORANGE='\033[0;33m'
+GREEN='\033[0;32m'
+NORMAL='\033[0;39m'
+PURPLE='\033[0;35m'
+
 parser = argparse.ArgumentParser(description = 'Search the arXiv')
 
 parser.add_argument('-d', '--download', action = 'store_true',
@@ -46,7 +55,7 @@ parser.add_argument("-m", "--max-results", type = int, default = 10,
 
 parser.add_argument("--sort-by",
         choices = ['relevance', 'updated', 'submitted'],
-        default = 'submitted',
+        default = 'relevance',
         help = "sort results either by relevance, by the date of the last update or by the date of submission (defaults to submitted)")
 parser.add_argument("--sort-order",
         choices = ['ascending', 'descending'],
@@ -110,7 +119,8 @@ base_url = 'http://export.arxiv.org/api/query?';
 print 'Searching the arXiv using the following query:'
 print '  ' + query
 print ''
-print 'Results:'
+print ''
+print MAGENTA + '----- Results -----' + NORMAL
 
 response = urllib.urlopen(base_url + query).read()
 response = response.replace('author', 'contributor')
@@ -122,35 +132,38 @@ for entry in feed.entries:
     index+=1
     print ''
     print ''
-    print 'INDEX: ' + `index`
-    print '  arXiv-id: %s' % entry.id.split('/abs/')[-1]
+    print 'INDEX: ' + PURPLE + `index` + NORMAL
+    print '  arXiv-id: '+ GREEN +'%s' % entry.id.split('/abs/')[-1] + NORMAL
     print '  Published: %s' % entry.published
-    print '  Title: %s' % entry.title
-    print '  Authors: %s' % ', '.join(author.name for author in
-            entry.contributors)
+    print '  Title: ' + ORANGE + '%s' % entry.title +NORMAL
+    print '  Authors: ' + CYAN + '%s' % ', '.join(author.name for author in
+            entry.contributors) +NORMAL
 
-    if args.download:
-        print ''
-        print '  Downloading to:'
-        for link in entry.links:
-            if link.type == 'application/pdf':
-                file_name = args.format
+    # if args.download:
+        # print ''
+        # print '  Downloading to:'
+        # for link in entry.links:
+            # if link.type == 'application/pdf':
+                # file_name = args.format
                 
-                arxiv_id = link.href.split('/')[-1]
-                file_name = file_name.replace('%i', arxiv_id)
-                file_name = file_name.replace('%t', entry.title)
-                authors = ', '.join(author.name for author in entry.contributors)
-                file_name = file_name.replace('%a', authors)
-                published = entry.published.split('T')[0]
-                file_name = file_name.replace('%p', published)
+                # arxiv_id = link.href.split('/')[-1]
+                # file_name = file_name.replace('%i', arxiv_id)
+                # file_name = file_name.replace('%t', entry.title)
+                # authors = ', '.join(author.name for author in entry.contributors)
+                # file_name = file_name.replace('%a', authors)
+                # published = entry.published.split('T')[0]
+                # file_name = file_name.replace('%p', published)
 
-                print('    ' + file_name + '.pdf')
-                urllib.urlretrieve(link.href, file_name + '.pdf')
+                # print('    ' + file_name + '.pdf')
+                # urllib.urlretrieve(link.href, file_name + '.pdf')
 
 print ''
-downIndex=raw_input('Which papers do you want to download (ex: 1,3) ?  ')
+downIndex=raw_input('Which papers would you like to download (ex: 1,3 or *) ?  ')
 try:
-    downItems =[int(i)-1 for i in downIndex.split(',')]
+    if (downIndex=='*'):
+        downItems=range(len(feed.entries))
+    else:
+        downItems =[int(i)-1 for i in downIndex.split(',')]
 except:
     print 'No download'
     downItems=[]
@@ -169,7 +182,7 @@ for index in downItems:
             file_name = file_name.replace('%a', authors)
             published = entry.published.split('T')[0]
             file_name = file_name.replace('%p', published)
-            print('    ' + file_name + '.pdf')
+            print('  ' + GREEN + file_name + '.pdf' + NORMAL)
             urllib.urlretrieve(link.href, file_name + '.pdf')
 
 print ''
